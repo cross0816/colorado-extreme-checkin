@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Colorado Extreme — Learn to Skate Sign Up</title>
+<meta name="theme-color" content="#1A2535">
+<link rel="apple-touch-icon" href="colorado-extreme-logo.jpg">
+
+<!-- QR code generation (vendored locally — no third-party CDN dependency) -->
+<script src="vendor/qrcode-generator.js"></script>
+
+<!-- Firebase SDKs (same project as the CXA Parent Portal) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey:            "AIzaSyDtB3WRTlmUcDPRg4m-MeBy8jMwxcakbQY",
+  authDomain:        "cxa-parent-portal.firebaseapp.com",
+  projectId:         "cxa-parent-portal",
+  storageBucket:     "cxa-parent-portal.firebasestorage.app",
+  messagingSenderId: "488155596502",
+  appId:             "1:488155596502:web:6a37a1ba930db9b6f56b77"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+</script>
+
+<style>
+:root{
+  --bg:#1A2535;--surface:#22304A;--field:#0F1826;--border:rgba(255,255,255,.12);
+  --t1:#FFFFFF;--t2:rgba(255,255,255,.6);--t3:rgba(255,255,255,.35);
+  --gold:#C4880A;--err:#FF8A80;--r:8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;}
+.hidden{display:none!important;}
+
+.wrap{width:100%;max-width:560px;flex:1;padding:20px 20px 40px;}
+
+.hdr{text-align:center;padding:18px 0 20px;}
+.hdr img{width:56px;height:56px;border-radius:8px;object-fit:cover;margin-bottom:10px;}
+.hdr h1{font-family:'Arial Narrow',Arial,sans-serif;font-size:15px;font-weight:900;text-transform:uppercase;letter-spacing:.16em;color:var(--t2);}
+.hdr h2{font-family:'Arial Narrow',Arial,sans-serif;font-size:24px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;color:#fff;margin-top:2px;}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;}
+.section-label{font-family:'Arial Narrow',Arial,sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.16em;color:var(--t3);margin:22px 0 10px;}
+.section-label:first-child{margin-top:0;}
+
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:6px;}
+.field input{width:100%;background:var(--field);border:1px solid var(--border);border-radius:6px;padding:12px 14px;color:#fff;font-size:15px;}
+.field input::placeholder{color:var(--t3);}
+.field input[type="date"]{color-scheme:dark;}
+
+.skater-card{background:var(--field);border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:12px;position:relative;}
+.skater-card .field{margin-bottom:10px;}
+.skater-card .field:last-child{margin-bottom:0;}
+.skater-row{display:flex;gap:10px;}
+.skater-row .field{flex:1;}
+.remove-skater{position:absolute;top:10px;right:10px;background:none;border:none;color:var(--t3);font-size:16px;cursor:pointer;line-height:1;}
+.remove-skater:hover{color:var(--err);}
+
+.add-skater-btn{width:100%;background:none;border:1px dashed var(--border);border-radius:6px;padding:11px;color:var(--t2);font-size:13px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.06em;}
+.add-skater-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--gold);color:#1A2535;border:none;border-radius:6px;padding:13px 20px;font-weight:800;font-size:14px;text-transform:uppercase;letter-spacing:.05em;cursor:pointer;width:100%;margin-top:8px;}
+.btn:disabled{opacity:.5;cursor:default;}
+.btn.outline{background:transparent;color:#fff;border:1px solid var(--border);width:auto;flex:1;margin-top:0;}
+.btn-row{display:flex;gap:8px;margin-top:12px;}
+
+.err-text{color:var(--err);font-size:13px;margin-top:10px;min-height:16px;text-align:center;}
+
+.ft{text-align:center;margin-top:18px;}
+.ft a{color:var(--t3);font-size:11.5px;text-decoration:none;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px dotted var(--t3);padding-bottom:1px;}
+.ft a:hover{color:var(--t2);}
+
+/* SUCCESS VIEW */
+.success-card{text-align:center;}
+.success-card h2{font-family:'Arial Narrow',Arial,sans-serif;font-size:22px;font-weight:900;text-transform:uppercase;margin-bottom:4px;}
+.success-card p{color:var(--t2);font-size:13.5px;margin-bottom:18px;}
+.qr-wrap{width:220px;height:220px;margin:0 auto 16px;border-radius:8px;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;}
+.qr-wrap img{width:100%;height:100%;display:block;}
+.qr-wrap .fallback{font-size:13px;color:#5A6A80;padding:16px;}
+.qr-code-text{font-family:ui-monospace,Menlo,monospace;font-size:24px;letter-spacing:.14em;font-weight:700;margin-bottom:18px;}
+
+@media print {
+  body *{visibility:hidden;}
+  #print-area, #print-area *{visibility:visible;}
+  #print-area{position:absolute;top:40px;left:0;right:0;text-align:center;}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="hdr">
+    <img src="colorado-extreme-logo.jpg" alt="Colorado Extreme">
+    <h1>Colorado Extreme</h1>
+    <h2>Learn to Skate Sign Up</h2>
+  </div>
+
+  <!-- SIGN-UP FORM -->
+  <div class="card" id="form-view">
+    <div class="section-label">Family Info</div>
+    <div class="field">
+      <label>Family Name</label>
+      <input id="su-family-name" placeholder="e.g. The Wolitski Family">
+    </div>
+    <div class="field">
+      <label>Parent / Guardian Name</label>
+      <input id="su-parent-name">
+    </div>
+    <div class="field">
+      <label>Contact (phone or email)</label>
+      <input id="su-contact">
+    </div>
+
+    <div class="section-label">Skaters</div>
+    <div id="su-skaters"></div>
+    <button class="add-skater-btn" onclick="addSkaterRow()">+ Add Another Skater</button>
+
+    <button class="btn" id="su-submit-btn" onclick="submitSignup()">Complete Sign Up</button>
+    <div class="err-text" id="su-err"></div>
+  </div>
+
+  <!-- SUCCESS / QR VIEW -->
+  <div class="card success-card hidden" id="success-view">
+    <div id="print-area">
+      <h2 id="success-family-name">You're all set!</h2>
+      <p>Show this QR code (or the short code below) at check-in from now on. Take a screenshot or print a copy.</p>
+      <div class="qr-wrap" id="qr-wrap">
+        <img id="qr-img" alt="QR code" style="display:none;">
+        <div class="fallback" id="qr-fallback-msg" style="display:none;">QR image unavailable — use the code below instead</div>
+      </div>
+      <div class="qr-code-text" id="qr-code-text"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn outline" onclick="downloadQr()">Download Image</button>
+      <button class="btn outline" onclick="window.print()">Print</button>
+    </div>
+    <button class="btn" onclick="location.href='index.html'">Go to Check-In</button>
+    <button class="btn outline" style="width:100%;margin-top:8px;" onclick="resetForm()">Sign Up Another Family</button>
+  </div>
+
+  <div class="ft"><a href="index.html">← Back to check-in</a></div>
+</div>
+
+<script>
+function skaterRowHtml() {
+  return `<div class="skater-card">
+    <button class="remove-skater" onclick="removeSkaterRow(this)" title="Remove skater">✕</button>
+    <div class="field">
+      <label>Skater Name</label>
+      <input class="su-skater-name" placeholder="Full name">
+    </div>
+    <div class="skater-row">
+      <div class="field">
+        <label>Date of Birth</label>
+        <input class="su-skater-dob" type="date">
+      </div>
+      <div class="field">
+        <label>Level (optional)</label>
+        <input class="su-skater-level" placeholder="e.g. Basic 1">
+      </div>
+    </div>
+  </div>`;
+}
+function addSkaterRow() {
+  document.getElementById('su-skaters').insertAdjacentHTML('beforeend', skaterRowHtml());
+}
+function removeSkaterRow(btn) {
+  const wrap = document.getElementById('su-skaters');
+  if (wrap.children.length > 1) btn.closest('.skater-card').remove();
+}
+addSkaterRow();
+
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no 0/O/1/I/L to avoid confusion
+function randomCode(len) {
+  let out = '';
+  const bytes = new Uint8Array(len);
+  crypto.getRandomValues(bytes);
+  for (let i = 0; i < len; i++) out += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
+  return out;
+}
+async function generateUniqueCode() {
+  for (let i = 0; i < 8; i++) {
+    const code = randomCode(6);
+    const doc = await db.collection('lts_families').doc(code).get();
+    if (!doc.exists) return code;
+  }
+  throw new Error('Could not generate a unique code, please try again.');
+}
+
+let lastCode = '';
+async function submitSignup() {
+  const err = document.getElementById('su-err');
+  err.textContent = '';
+
+  const familyName = document.getElementById('su-family-name').value.trim();
+  const parentName = document.getElementById('su-parent-name').value.trim();
+  const contact    = document.getElementById('su-contact').value.trim();
+  const students = Array.from(document.querySelectorAll('#su-skaters .skater-card')).map(row => ({
+    name:  row.querySelector('.su-skater-name').value.trim(),
+    dob:   row.querySelector('.su-skater-dob').value,
+    level: row.querySelector('.su-skater-level').value.trim()
+  })).filter(s => s.name);
+
+  if (!familyName) { err.textContent = 'Please enter a family name.'; return; }
+  if (!parentName) { err.textContent = 'Please enter a parent/guardian name.'; return; }
+  if (!contact)    { err.textContent = 'Please enter a phone number or email.'; return; }
+  if (!students.length) { err.textContent = 'Please add at least one skater.'; return; }
+  if (students.some(s => !s.dob)) { err.textContent = 'Please enter a date of birth for each skater.'; return; }
+
+  const btn = document.getElementById('su-submit-btn');
+  btn.disabled = true; btn.textContent = 'Signing up…';
+  try {
+    const code = await generateUniqueCode();
+    await db.collection('lts_families').doc(code).set({
+      familyName, parentName, contact, students,
+      active: true,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    lastCode = code;
+    showSuccess(familyName, code);
+  } catch (e) {
+    err.textContent = e.message || 'Sign up failed. Please try again or see the front desk.';
+  }
+  btn.disabled = false; btn.textContent = 'Complete Sign Up';
+}
+
+let qrReady = false;
+let qrDataUrl = '';
+function showSuccess(familyName, code) {
+  document.getElementById('form-view').classList.add('hidden');
+  document.getElementById('success-view').classList.remove('hidden');
+  document.getElementById('success-family-name').textContent = `Welcome, ${familyName}!`;
+  document.getElementById('qr-code-text').textContent = code;
+
+  const img = document.getElementById('qr-img');
+  const fallback = document.getElementById('qr-fallback-msg');
+  qrReady = false; qrDataUrl = '';
+  img.style.display = 'none';
+  fallback.style.display = 'none';
+  try {
+    if (typeof qrcode === 'undefined') throw new Error('QR library failed to load');
+    const qr = qrcode(0, 'M');
+    qr.addData(code);
+    qr.make();
+    qrDataUrl = qr.createDataURL(8, 8);
+    img.src = qrDataUrl;
+    img.style.display = 'block';
+    qrReady = true;
+  } catch (e) {
+    console.error('QR generation failed:', e);
+    fallback.style.display = 'flex';
+  }
+  window.scrollTo(0, 0);
+}
+function downloadQr() {
+  if (!qrReady) { alert('The QR image is unavailable right now — please use the printed code text instead.'); return; }
+  const a = document.createElement('a');
+  a.href = qrDataUrl;
+  a.download = `lts-code-${lastCode}.gif`;
+  a.click();
+}
+function resetForm() {
+  document.getElementById('su-family-name').value = '';
+  document.getElementById('su-parent-name').value = '';
+  document.getElementById('su-contact').value = '';
+  document.getElementById('su-skaters').innerHTML = '';
+  addSkaterRow();
+  document.getElementById('su-err').textContent = '';
+  document.getElementById('success-view').classList.add('hidden');
+  document.getElementById('form-view').classList.remove('hidden');
+  window.scrollTo(0, 0);
+}
+</script>
+</body>
+</html>

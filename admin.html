@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Colorado Extreme — Learn to Skate Admin</title>
+<meta name="theme-color" content="#1A2535">
+<link rel="apple-touch-icon" href="colorado-extreme-logo.jpg">
+
+<!-- QR code generation (vendored locally — no third-party CDN dependency) -->
+<script src="vendor/qrcode-generator.js"></script>
+
+<!-- Firebase SDKs (same project as the CXA Parent Portal) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey:            "AIzaSyDtB3WRTlmUcDPRg4m-MeBy8jMwxcakbQY",
+  authDomain:        "cxa-parent-portal.firebaseapp.com",
+  projectId:         "cxa-parent-portal",
+  storageBucket:     "cxa-parent-portal.firebasestorage.app",
+  messagingSenderId: "488155596502",
+  appId:             "1:488155596502:web:6a37a1ba930db9b6f56b77"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+</script>
+
+<style>
+:root{
+  --bg:#F5F6F8;--surface:#FFFFFF;--card:#FFFFFF;--border:#E4E7EC;
+  --t1:#1A2535;--t2:#5A6A80;--t3:#A0AABB;
+  --accent:#1A2535;--gold:#C4880A;
+  --ok:#2E7D32;--ok-bg:#EAF6EB;--err:#B3261E;--err-bg:#FCEBEA;--r:6px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;}
+.hidden{display:none!important;}
+
+/* LOGIN */
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.login-box{width:100%;max-width:340px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:32px 28px;text-align:center;}
+.login-box img{width:64px;height:64px;border-radius:8px;object-fit:cover;margin-bottom:14px;}
+.login-box h1{font-family:'Arial Narrow',Arial,sans-serif;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.14em;color:var(--t2);margin-bottom:4px;}
+.login-box h2{font-family:'Arial Narrow',Arial,sans-serif;font-size:20px;font-weight:900;text-transform:uppercase;letter-spacing:.03em;margin-bottom:20px;}
+.field{margin-bottom:12px;text-align:left;}
+.field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:5px;}
+.field input,.field select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r);font-size:14px;color:var(--t1);}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--accent);color:#fff;border:none;border-radius:var(--r);padding:11px 18px;font-weight:700;font-size:13px;cursor:pointer;}
+.btn:disabled{opacity:.55;cursor:default;}
+.btn.gold{background:var(--gold);}
+.btn.outline{background:transparent;color:var(--t1);border:1px solid var(--border);}
+.btn.danger{background:transparent;color:var(--err);border:1px solid var(--err);}
+.btn.block{width:100%;}
+.err-text{color:var(--err);font-size:12.5px;margin-top:8px;min-height:16px;}
+
+/* APP SHELL */
+#app{max-width:1080px;margin:0 auto;padding:0 20px 60px;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:20px 0;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.topbar .brand{display:flex;align-items:center;gap:10px;}
+.topbar .brand img{width:34px;height:34px;border-radius:6px;object-fit:cover;}
+.topbar h1{font-family:'Arial Narrow',Arial,sans-serif;font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;}
+.topbar-sub{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;}
+
+.tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--border);}
+.tab{padding:10px 4px;margin-right:22px;font-family:'Arial Narrow',Arial,sans-serif;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;}
+.tab.active{color:var(--t1);border-bottom-color:var(--gold);}
+.panel{display:none;}
+.panel.active{display:block;}
+
+.row-between{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.stat-strip{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+.stat{background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px 18px;min-width:130px;}
+.stat .n{font-family:'Arial Narrow',Arial,sans-serif;font-size:26px;font-weight:900;}
+.stat .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-top:2px;}
+
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+thead th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);padding:10px 14px;border-bottom:1px solid var(--border);background:#FAFBFC;}
+tbody td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:13.5px;vertical-align:top;}
+tbody tr:last-child td{border-bottom:none;}
+.muted{color:var(--t3);}
+.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+.pill.on{background:var(--ok-bg);color:var(--ok);}
+.pill.off{background:var(--err-bg);color:var(--err);}
+.code-badge{font-family:ui-monospace,Menlo,monospace;background:#F0F2F5;border-radius:4px;padding:2px 6px;font-size:12.5px;letter-spacing:.04em;}
+.actions-cell{display:flex;gap:6px;flex-wrap:wrap;}
+.mini-btn{background:none;border:1px solid var(--border);border-radius:var(--r);padding:5px 10px;font-size:12px;cursor:pointer;color:var(--t2);}
+.mini-btn:hover{border-color:var(--accent);color:var(--t1);}
+.mini-btn.danger{color:var(--err);border-color:var(--err);}
+.empty-state{padding:30px;text-align:center;color:var(--t3);font-size:13.5px;}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px;}
+.modal{background:#fff;border-radius:10px;padding:24px;width:100%;max-width:440px;max-height:88vh;overflow-y:auto;}
+.modal h3{font-family:'Arial Narrow',Arial,sans-serif;font-size:17px;font-weight:900;text-transform:uppercase;margin-bottom:16px;}
+.modal-ft{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
+.student-row{margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.student-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+.student-row input{flex:1;}
+.add-student-btn{font-size:12px;color:var(--gold);background:none;border:none;cursor:pointer;font-weight:700;padding:2px 0;}
+.qr-box{text-align:center;}
+.qr-box canvas{border:1px solid var(--border);border-radius:8px;}
+.qr-code-text{font-family:ui-monospace,Menlo,monospace;font-size:22px;letter-spacing:.12em;margin:12px 0;font-weight:700;}
+
+@media print {
+  body *{visibility:hidden;}
+  #print-area, #print-area *{visibility:visible;}
+  #print-area{position:absolute;top:40px;left:0;right:0;text-align:center;}
+}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <img src="colorado-extreme-logo.jpg" alt="Colorado Extreme">
+    <h1>Colorado Extreme</h1>
+    <h2>Learn to Skate — Staff</h2>
+    <div class="field">
+      <label>Email</label>
+      <input id="login-email" type="email" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input id="login-pass" type="password" autocomplete="current-password">
+    </div>
+    <button class="btn block" id="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="err-text" id="login-err"></div>
+    <div style="margin-top:10px;font-size:11.5px;"><a href="index.html" style="color:var(--t3);">← Back to check-in</a></div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <div class="topbar">
+    <div class="brand">
+      <img src="colorado-extreme-logo.jpg" alt="Colorado Extreme">
+      <div>
+        <h1>Learn to Skate</h1>
+        <div class="topbar-sub">Staff Admin</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <a href="index.html" class="mini-btn">Open Check-In Kiosk</a>
+      <button class="mini-btn" onclick="doSignOut()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="attendance" onclick="showTab('attendance')">Attendance</div>
+    <div class="tab" data-tab="roster" onclick="showTab('roster')">Roster</div>
+  </div>
+
+  <!-- ATTENDANCE PANEL -->
+  <div class="panel active" id="panel-attendance">
+    <div class="row-between">
+      <div style="display:flex;gap:10px;align-items:center;">
+        <input type="date" id="att-date" onchange="loadAttendance()">
+        <button class="mini-btn" onclick="setAttToday()">Today</button>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn outline" onclick="openManualCheckin()">+ Manual Check-In</button>
+        <button class="btn gold" onclick="exportCsv()">Export CSV</button>
+      </div>
+    </div>
+
+    <div class="stat-strip">
+      <div class="stat"><div class="n" id="stat-families">0</div><div class="l">Families Checked In</div></div>
+      <div class="stat"><div class="n" id="stat-students">0</div><div class="l">Skaters Checked In</div></div>
+    </div>
+
+    <table>
+      <thead><tr><th>Time</th><th>Family</th><th>Skaters</th><th></th></tr></thead>
+      <tbody id="att-body"><tr><td colspan="4" class="empty-state">Loading…</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- ROSTER PANEL -->
+  <div class="panel" id="panel-roster">
+    <div class="row-between">
+      <div class="muted" style="font-size:13px;">Every family gets a unique code — print it as a QR card or hand out the short code for manual entry.</div>
+      <button class="btn gold" onclick="openFamilyModal()">+ Add Family</button>
+    </div>
+    <table>
+      <thead><tr><th>Family</th><th>Skaters</th><th>Code</th><th>Status</th><th></th></tr></thead>
+      <tbody id="roster-body"><tr><td colspan="5" class="empty-state">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- FAMILY ADD/EDIT MODAL -->
+<div class="modal-bg hidden" id="family-modal">
+  <div class="modal">
+    <h3 id="family-modal-title">Add Family</h3>
+    <input type="hidden" id="fm-code">
+    <div class="field">
+      <label>Family Name</label>
+      <input id="fm-family-name" placeholder="e.g. The Wolitski Family">
+    </div>
+    <div class="field">
+      <label>Parent / Guardian Name</label>
+      <input id="fm-parent-name">
+    </div>
+    <div class="field">
+      <label>Contact (phone or email)</label>
+      <input id="fm-contact">
+    </div>
+    <div class="field">
+      <label>Skaters</label>
+      <div id="fm-students"></div>
+      <button class="add-student-btn" onclick="addStudentRow()">+ Add another skater</button>
+    </div>
+    <div class="field">
+      <label><input type="checkbox" id="fm-active" checked style="width:auto;margin-right:6px;">Active</label>
+    </div>
+    <div class="err-text" id="family-modal-err"></div>
+    <div class="modal-ft">
+      <button class="btn outline" onclick="closeFamilyModal()">Cancel</button>
+      <button class="btn gold" id="fm-save-btn" onclick="saveFamily()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- QR MODAL -->
+<div class="modal-bg hidden" id="qr-modal">
+  <div class="modal qr-box">
+    <div id="print-area">
+      <h3 id="qr-family-name">Family Name</h3>
+      <div id="qr-canvas-wrap" style="width:220px;height:220px;margin:0 auto;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+        <img id="qr-img" width="220" height="220" alt="QR code" style="display:none;width:100%;height:100%;">
+        <div id="qr-fallback-msg" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;text-align:center;padding:16px;font-size:13px;color:var(--t2);">QR image unavailable — use the code below instead</div>
+      </div>
+      <div class="qr-code-text" id="qr-code-text"></div>
+    </div>
+    <div class="modal-ft" style="justify-content:center;">
+      <button class="btn outline" onclick="closeQrModal()">Close</button>
+      <button class="btn outline" onclick="downloadQr()">Download Image</button>
+      <button class="btn gold" onclick="window.print()">Print</button>
+    </div>
+  </div>
+</div>
+
+<!-- MANUAL CHECK-IN MODAL -->
+<div class="modal-bg hidden" id="manual-modal">
+  <div class="modal">
+    <h3>Manual Check-In</h3>
+    <div class="field">
+      <label>Search Family</label>
+      <input id="manual-search" placeholder="Start typing a family name…" oninput="filterManualList()">
+    </div>
+    <div id="manual-list" style="max-height:260px;overflow-y:auto;"></div>
+    <div class="err-text" id="manual-modal-err"></div>
+    <div class="modal-ft">
+      <button class="btn outline" onclick="closeManualModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── AUTH ──
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const btn   = document.getElementById('login-btn');
+  const err   = document.getElementById('login-err');
+  err.textContent = '';
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  auth.signInWithEmailAndPassword(email, pass).catch(e => {
+    err.textContent = friendlyAuthError(e.code);
+  }).finally(() => { btn.disabled = false; btn.textContent = 'Sign In'; });
+}
+function doSignOut() { auth.signOut(); }
+function friendlyAuthError(code) {
+  const map = {
+    'auth/user-not-found':    'No account found with that email.',
+    'auth/wrong-password':    'Incorrect password. Try again.',
+    'auth/invalid-email':     'Please enter a valid email address.',
+    'auth/too-many-requests': 'Too many attempts. Try again later.',
+    'auth/invalid-credential':'Email or password is incorrect.'
+  };
+  return map[code] || 'Sign-in failed. Please try again.';
+}
+document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+auth.onAuthStateChanged(async user => {
+  if (!user) {
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('app').classList.add('hidden');
+    return;
+  }
+  try {
+    const doc = await db.collection('users').doc(user.uid).get();
+    if (!doc.exists || doc.data().role !== 'admin') {
+      document.getElementById('login-err').textContent = 'This account is not authorized for staff access.';
+      auth.signOut();
+      return;
+    }
+  } catch (e) {
+    document.getElementById('login-err').textContent = 'Could not verify staff access. Try again.';
+    auth.signOut();
+    return;
+  }
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  setAttToday();
+  loadRoster();
+});
+
+// ── TABS ──
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+// ── DATE HELPERS ──
+function todayStr() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Denver' }).format(new Date());
+}
+function fmtTime(ts) {
+  if (!ts || !ts.toDate) return '—';
+  return new Intl.DateTimeFormat('en-US', { timeZone:'America/Denver', hour:'numeric', minute:'2-digit' }).format(ts.toDate());
+}
+
+// ── ATTENDANCE ──
+let attUnsub = null;
+let currentAttRows = [];
+function setAttToday() {
+  document.getElementById('att-date').value = todayStr();
+  loadAttendance();
+}
+function loadAttendance() {
+  const date = document.getElementById('att-date').value || todayStr();
+  if (attUnsub) attUnsub();
+  const body = document.getElementById('att-body');
+  body.innerHTML = '<tr><td colspan="4" class="empty-state">Loading…</td></tr>';
+  attUnsub = db.collection('lts_attendance').where('date', '==', date)
+    .onSnapshot(snap => {
+      currentAttRows = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (a.checkedInAt?.toMillis?.() || 0) - (b.checkedInAt?.toMillis?.() || 0));
+      renderAttendance();
+    }, e => {
+      body.innerHTML = `<tr><td colspan="4" class="empty-state">Could not load attendance: ${e.message}</td></tr>`;
+    });
+}
+function renderAttendance() {
+  const body = document.getElementById('att-body');
+  document.getElementById('stat-families').textContent = currentAttRows.length;
+  document.getElementById('stat-students').textContent = currentAttRows.reduce((sum, r) => sum + (r.students?.length || 0), 0);
+  if (!currentAttRows.length) {
+    body.innerHTML = '<tr><td colspan="4" class="empty-state">No check-ins yet for this date.</td></tr>';
+    return;
+  }
+  body.innerHTML = currentAttRows.map(r => `
+    <tr>
+      <td>${fmtTime(r.checkedInAt)}</td>
+      <td>${escapeHtml(r.familyName || '—')}</td>
+      <td>${escapeHtml((r.students || []).map(s => s.name).filter(Boolean).join(', ') || '—')}</td>
+      <td class="actions-cell"><button class="mini-btn danger" onclick="deleteAttendance('${r.id}')">Remove</button></td>
+    </tr>`).join('');
+}
+async function deleteAttendance(id) {
+  if (!confirm('Remove this check-in record?')) return;
+  await db.collection('lts_attendance').doc(id).delete();
+}
+function exportCsv() {
+  const date = document.getElementById('att-date').value || todayStr();
+  const rows = [['Date','Time','Family','Skaters']];
+  currentAttRows.forEach(r => rows.push([date, fmtTime(r.checkedInAt), r.familyName || '', (r.students||[]).map(s=>s.name).filter(Boolean).join('; ')]));
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `learn-to-skate-attendance-${date}.csv`;
+  a.click();
+}
+
+// ── MANUAL CHECK-IN ──
+let manualFamilies = [];
+async function openManualCheckin() {
+  document.getElementById('manual-modal-err').textContent = '';
+  document.getElementById('manual-search').value = '';
+  document.getElementById('manual-modal').classList.remove('hidden');
+  const snap = await db.collection('lts_families').get();
+  manualFamilies = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(f => f.active !== false);
+  renderManualList(manualFamilies);
+}
+function closeManualModal() { document.getElementById('manual-modal').classList.add('hidden'); }
+function filterManualList() {
+  const q = document.getElementById('manual-search').value.trim().toLowerCase();
+  renderManualList(manualFamilies.filter(f => (f.familyName || '').toLowerCase().includes(q)));
+}
+function renderManualList(list) {
+  const el = document.getElementById('manual-list');
+  if (!list.length) { el.innerHTML = '<div class="empty-state">No matching families.</div>'; return; }
+  el.innerHTML = list.map(f => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);">
+      <div>
+        <div style="font-weight:600;font-size:13.5px;">${escapeHtml(f.familyName || '—')}</div>
+        <div class="muted" style="font-size:11.5px;">${escapeHtml((f.students||[]).map(s=>s.name).filter(Boolean).join(', '))}</div>
+      </div>
+      <button class="mini-btn" onclick="manualCheckIn('${f.id}')">Check In</button>
+    </div>`).join('');
+}
+async function manualCheckIn(code) {
+  const err = document.getElementById('manual-modal-err');
+  err.textContent = '';
+  try {
+    const famDoc = await db.collection('lts_families').doc(code).get();
+    if (!famDoc.exists) { err.textContent = 'Family not found.'; return; }
+    const fam = famDoc.data();
+    const date = document.getElementById('att-date').value || todayStr();
+    const attendanceRef = db.collection('lts_attendance').doc(`${code}_${date}`);
+    const existing = await attendanceRef.get();
+    if (existing.exists) { err.textContent = `${fam.familyName} is already checked in for ${date}.`; return; }
+    await attendanceRef.set({
+      familyId: code,
+      familyName: fam.familyName || '',
+      students: fam.students || [],
+      date,
+      checkedInAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    closeManualModal();
+  } catch (e) {
+    err.textContent = e.message;
+  }
+}
+
+// ── ROSTER ──
+let rosterCache = [];
+async function loadRoster() {
+  const body = document.getElementById('roster-body');
+  body.innerHTML = '<tr><td colspan="5" class="empty-state">Loading…</td></tr>';
+  try {
+    const snap = await db.collection('lts_families').orderBy('familyName').get();
+    rosterCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderRoster();
+  } catch (e) {
+    body.innerHTML = `<tr><td colspan="5" class="empty-state">Could not load roster: ${e.message}</td></tr>`;
+  }
+}
+function renderRoster() {
+  const body = document.getElementById('roster-body');
+  if (!rosterCache.length) { body.innerHTML = '<tr><td colspan="5" class="empty-state">No families added yet.</td></tr>'; return; }
+  body.innerHTML = rosterCache.map(f => `
+    <tr>
+      <td>${escapeHtml(f.familyName || '—')}<div class="muted" style="font-size:11.5px;">${escapeHtml(f.parentName || '')}</div></td>
+      <td>${escapeHtml((f.students||[]).map(s=>s.name).filter(Boolean).join(', ') || '—')}</td>
+      <td><span class="code-badge">${f.id}</span></td>
+      <td><span class="pill ${f.active === false ? 'off' : 'on'}">${f.active === false ? 'Inactive' : 'Active'}</span></td>
+      <td class="actions-cell">
+        <button class="mini-btn" onclick="openQrModal('${f.id}')">QR Code</button>
+        <button class="mini-btn" onclick="openFamilyModal('${f.id}')">Edit</button>
+        <button class="mini-btn danger" onclick="deleteFamily('${f.id}')">Delete</button>
+      </td>
+    </tr>`).join('');
+}
+
+// ── FAMILY MODAL ──
+function studentRowHtml(name, dob, level) {
+  return `<div class="student-row">
+    <div style="display:flex;gap:8px;">
+      <input class="fm-student-name" placeholder="Skater name" value="${escapeAttr(name||'')}">
+      <button class="mini-btn danger" onclick="this.closest('.student-row').remove()" style="flex-shrink:0;">✕</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <input class="fm-student-dob" type="date" value="${escapeAttr(dob||'')}">
+      <input class="fm-student-level" placeholder="Level (optional)" value="${escapeAttr(level||'')}" style="max-width:130px;">
+    </div>
+  </div>`;
+}
+function addStudentRow(name, dob, level) {
+  document.getElementById('fm-students').insertAdjacentHTML('beforeend', studentRowHtml(name, dob, level));
+}
+function openFamilyModal(code) {
+  document.getElementById('family-modal-err').textContent = '';
+  document.getElementById('fm-students').innerHTML = '';
+  if (code) {
+    const f = rosterCache.find(r => r.id === code);
+    document.getElementById('family-modal-title').textContent = 'Edit Family';
+    document.getElementById('fm-code').value = code;
+    document.getElementById('fm-family-name').value = f.familyName || '';
+    document.getElementById('fm-parent-name').value = f.parentName || '';
+    document.getElementById('fm-contact').value = f.contact || '';
+    document.getElementById('fm-active').checked = f.active !== false;
+    (f.students && f.students.length ? f.students : [{}]).forEach(s => addStudentRow(s.name, s.dob, s.level));
+  } else {
+    document.getElementById('family-modal-title').textContent = 'Add Family';
+    document.getElementById('fm-code').value = '';
+    document.getElementById('fm-family-name').value = '';
+    document.getElementById('fm-parent-name').value = '';
+    document.getElementById('fm-contact').value = '';
+    document.getElementById('fm-active').checked = true;
+    addStudentRow();
+  }
+  document.getElementById('family-modal').classList.remove('hidden');
+}
+function closeFamilyModal() { document.getElementById('family-modal').classList.add('hidden'); }
+
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no 0/O/1/I/L to avoid confusion
+function randomCode(len) {
+  let out = '';
+  const bytes = new Uint8Array(len);
+  crypto.getRandomValues(bytes);
+  for (let i = 0; i < len; i++) out += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
+  return out;
+}
+async function generateUniqueCode() {
+  for (let i = 0; i < 8; i++) {
+    const code = randomCode(6);
+    const doc = await db.collection('lts_families').doc(code).get();
+    if (!doc.exists) return code;
+  }
+  throw new Error('Could not generate a unique code, please try again.');
+}
+
+async function saveFamily() {
+  const err = document.getElementById('family-modal-err');
+  err.textContent = '';
+  const familyName = document.getElementById('fm-family-name').value.trim();
+  const parentName = document.getElementById('fm-parent-name').value.trim();
+  const contact    = document.getElementById('fm-contact').value.trim();
+  const active     = document.getElementById('fm-active').checked;
+  const students = Array.from(document.querySelectorAll('#fm-students .student-row')).map(row => ({
+    name:  row.querySelector('.fm-student-name').value.trim(),
+    dob:   row.querySelector('.fm-student-dob').value,
+    level: row.querySelector('.fm-student-level').value.trim()
+  })).filter(s => s.name);
+
+  if (!familyName) { err.textContent = 'Family name is required.'; return; }
+  if (!students.length) { err.textContent = 'Add at least one skater.'; return; }
+
+  const btn = document.getElementById('fm-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    let code = document.getElementById('fm-code').value;
+    if (!code) code = await generateUniqueCode();
+    await db.collection('lts_families').doc(code).set({
+      familyName, parentName, contact, students, active,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    closeFamilyModal();
+    loadRoster();
+  } catch (e) {
+    err.textContent = e.message;
+  }
+  btn.disabled = false; btn.textContent = 'Save';
+}
+
+async function deleteFamily(code) {
+  const f = rosterCache.find(r => r.id === code);
+  if (!confirm(`Delete ${f?.familyName || 'this family'}? This cannot be undone. Past attendance history is kept.`)) return;
+  await db.collection('lts_families').doc(code).delete();
+  loadRoster();
+}
+
+// ── QR MODAL ──
+let currentQrCode = '';
+let qrReady = false;
+let qrDataUrl = '';
+function openQrModal(code) {
+  const f = rosterCache.find(r => r.id === code);
+  currentQrCode = code;
+  qrReady = false;
+  qrDataUrl = '';
+  document.getElementById('qr-family-name').textContent = f?.familyName || '';
+  document.getElementById('qr-code-text').textContent = code;
+  document.getElementById('qr-modal').classList.remove('hidden');
+
+  const img = document.getElementById('qr-img');
+  const fallback = document.getElementById('qr-fallback-msg');
+  img.style.display = 'none';
+  fallback.style.display = 'none';
+  try {
+    if (typeof qrcode === 'undefined') throw new Error('QR library failed to load');
+    const qr = qrcode(0, 'M');
+    qr.addData(code);
+    qr.make();
+    qrDataUrl = qr.createDataURL(8, 8);
+    img.src = qrDataUrl;
+    img.style.display = 'block';
+    qrReady = true;
+  } catch (e) {
+    console.error('QR generation failed:', e);
+    fallback.style.display = 'flex';
+  }
+}
+function closeQrModal() { document.getElementById('qr-modal').classList.add('hidden'); }
+function downloadQr() {
+  if (!qrReady) { alert('The QR image is unavailable right now — please use the printed code text instead.'); return; }
+  const a = document.createElement('a');
+  a.href = qrDataUrl;
+  a.download = `lts-code-${currentQrCode}.gif`;
+  a.click();
+}
+
+// ── UTIL ──
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(str) { return escapeHtml(str); }
+</script>
+</body>
+</html>

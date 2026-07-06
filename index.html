@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<title>Colorado Extreme — Learn to Skate Check-In</title>
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CE Check-In">
+<meta name="theme-color" content="#1A2535">
+<link rel="apple-touch-icon" href="colorado-extreme-logo.jpg">
+
+<!-- QR camera scanner -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<!-- Firebase SDKs (same project as the CXA Parent Portal) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey:            "AIzaSyDtB3WRTlmUcDPRg4m-MeBy8jMwxcakbQY",
+  authDomain:        "cxa-parent-portal.firebaseapp.com",
+  projectId:         "cxa-parent-portal",
+  storageBucket:     "cxa-parent-portal.firebasestorage.app",
+  messagingSenderId: "488155596502",
+  appId:             "1:488155596502:web:6a37a1ba930db9b6f56b77"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+</script>
+
+<style>
+:root{
+  --bg:#1A2535;--surface:#22304A;--border:rgba(255,255,255,.1);
+  --t1:#FFFFFF;--t2:rgba(255,255,255,.6);--t3:rgba(255,255,255,.35);
+  --gold:#C4880A;--ok:#2E7D32;--ok-bg:#183621;--err:#B3261E;--err-bg:#3A1A18;--r:10px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;overflow-x:hidden;}
+.hidden{display:none!important;}
+
+/* LOGIN (staff-only access to the kiosk) */
+.login-screen{min-height:100vh;min-height:100dvh;width:100%;display:flex;align-items:center;justify-content:center;padding:20px;}
+.login-box{width:100%;max-width:340px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:32px 28px;text-align:center;}
+.login-box img{width:56px;height:56px;border-radius:8px;object-fit:cover;margin-bottom:14px;}
+.login-box h1{font-family:'Arial Narrow',Arial,sans-serif;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.14em;color:var(--t2);margin-bottom:4px;}
+.login-box h2{font-family:'Arial Narrow',Arial,sans-serif;font-size:19px;font-weight:900;text-transform:uppercase;letter-spacing:.03em;margin-bottom:20px;color:#fff;}
+.field{margin-bottom:12px;text-align:left;}
+.field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:5px;}
+.field input{width:100%;background:#0F1826;border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:14px;color:#fff;}
+.login-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--gold);color:#1A2535;border:none;border-radius:6px;padding:11px 18px;font-weight:800;font-size:13px;text-transform:uppercase;cursor:pointer;width:100%;margin-top:4px;}
+.login-btn:disabled{opacity:.55;cursor:default;}
+.login-err{color:#FF8A80;font-size:12.5px;margin-top:10px;min-height:16px;}
+
+.wrap{width:100%;max-width:560px;flex:1;display:flex;flex-direction:column;padding:20px 20px 28px;}
+
+.hdr{text-align:center;padding:18px 0 10px;}
+.hdr img{width:56px;height:56px;border-radius:8px;object-fit:cover;margin-bottom:10px;}
+.hdr h1{font-family:'Arial Narrow',Arial,sans-serif;font-size:15px;font-weight:900;text-transform:uppercase;letter-spacing:.16em;color:var(--t2);}
+.hdr h2{font-family:'Arial Narrow',Arial,sans-serif;font-size:26px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;color:#fff;margin-top:2px;}
+
+.clock{text-align:center;font-size:13px;color:var(--t3);margin-bottom:14px;letter-spacing:.04em;}
+
+.stage{position:relative;background:#000;border-radius:var(--r);overflow:hidden;aspect-ratio:1/1;border:2px solid var(--border);}
+#reader{width:100%;height:100%;}
+#reader video{width:100%!important;height:100%!important;object-fit:cover;}
+.scan-hint{position:absolute;left:0;right:0;bottom:0;padding:12px;text-align:center;font-size:13px;color:rgba(255,255,255,.85);background:linear-gradient(transparent,rgba(0,0,0,.65));pointer-events:none;}
+
+.status{margin-top:16px;border-radius:var(--r);padding:20px;text-align:center;min-height:96px;display:flex;flex-direction:column;justify-content:center;gap:4px;background:var(--surface);border:1px solid var(--border);transition:background .15s,border-color .15s;}
+.status.ok{background:var(--ok-bg);border-color:var(--ok);}
+.status.err{background:var(--err-bg);border-color:var(--err);}
+.status-icon{font-size:30px;line-height:1;margin-bottom:4px;}
+.status-title{font-family:'Arial Narrow',Arial,sans-serif;font-size:19px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;}
+.status-sub{font-size:13.5px;color:var(--t2);margin-top:2px;}
+
+.manual{margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;}
+.manual-label{font-family:'Arial Narrow',Arial,sans-serif;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.18em;color:var(--t3);margin-bottom:8px;}
+.manual-row{display:flex;gap:8px;}
+.manual-row input{flex:1;background:#0F1826;border:1px solid var(--border);border-radius:6px;padding:12px 14px;color:#fff;font-size:16px;letter-spacing:.08em;text-transform:uppercase;}
+.manual-row input::placeholder{color:var(--t3);text-transform:none;letter-spacing:normal;}
+.manual-row button{background:var(--gold);color:#1A2535;border:none;border-radius:6px;padding:0 18px;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;}
+.manual-row button:disabled{opacity:.5;cursor:default;}
+
+.cam-select{margin-top:10px;display:flex;justify-content:center;}
+.cam-select select{background:transparent;border:1px solid var(--border);color:var(--t2);border-radius:6px;padding:6px 10px;font-size:12px;}
+
+.ft{text-align:center;margin-top:18px;}
+.ft a{color:var(--t3);font-size:11.5px;text-decoration:none;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px dotted var(--t3);padding-bottom:1px;}
+.ft a:hover{color:var(--t2);}
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <img src="colorado-extreme-logo.jpg" alt="Colorado Extreme">
+    <h1>Colorado Extreme</h1>
+    <h2>Learn to Skate Check-In</h2>
+    <div class="field">
+      <label>Email</label>
+      <input id="login-email" type="email" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input id="login-pass" type="password" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="login-err"></div>
+    <div style="margin-top:10px;font-size:11.5px;"><a href="signup.html" style="color:var(--t3);">Are you a family signing up? Go here →</a></div>
+  </div>
+</div>
+
+<div class="wrap hidden" id="kiosk-app">
+  <div class="hdr">
+    <img src="colorado-extreme-logo.jpg" alt="Colorado Extreme">
+    <h1>Colorado Extreme</h1>
+    <h2>Learn to Skate Check-In</h2>
+  </div>
+
+  <div class="clock" id="clock">—</div>
+
+  <div class="stage">
+    <div id="reader"></div>
+    <div class="scan-hint" id="scan-hint">Hold your family QR code or card up to the camera</div>
+  </div>
+
+  <div class="cam-select" id="cam-select" style="display:none;">
+    <select id="cam-list" onchange="switchCamera(this.value)"></select>
+  </div>
+
+  <div class="status" id="status">
+    <div class="status-icon" id="status-icon"></div>
+    <div class="status-title" id="status-title">Ready to Scan</div>
+    <div class="status-sub" id="status-sub">Families: please scan in one at a time</div>
+  </div>
+
+  <div class="manual">
+    <div class="manual-label">No camera? Enter your code</div>
+    <div class="manual-row">
+      <input id="manual-code" placeholder="e.g. 7F3K9Q" maxlength="12" autocomplete="off" autocapitalize="characters">
+      <button id="manual-btn" onclick="submitManualCode()">Check In</button>
+    </div>
+  </div>
+
+  <div class="ft"><a href="admin.html">Admin Dashboard</a> &nbsp;·&nbsp; <a href="signup.html">New Family Sign Up</a> &nbsp;·&nbsp; <a href="#" onclick="doSignOut();return false;">Sign Out</a></div>
+</div>
+
+<script>
+// ── Helpers ──
+function todayStr() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Denver' }).format(new Date());
+}
+function normalizeCode(raw) {
+  return (raw || '').trim().toUpperCase().replace(/\s+/g, '');
+}
+function tick() {
+  const now = new Date();
+  const opts = { timeZone:'America/Denver', weekday:'long', month:'long', day:'numeric', hour:'numeric', minute:'2-digit' };
+  document.getElementById('clock').textContent = new Intl.DateTimeFormat('en-US', opts).format(now);
+}
+tick(); setInterval(tick, 15000);
+
+// ── Status UI ──
+let resetTimer = null;
+function setStatus(kind, title, sub) {
+  const el = document.getElementById('status');
+  el.className = 'status' + (kind ? ' ' + kind : '');
+  document.getElementById('status-icon').textContent = kind === 'ok' ? '✓' : kind === 'err' ? '✕' : '';
+  document.getElementById('status-title').textContent = title;
+  document.getElementById('status-sub').textContent = sub || '';
+}
+function resetStatusSoon(delay) {
+  clearTimeout(resetTimer);
+  resetTimer = setTimeout(() => {
+    setStatus('', 'Ready to Scan', 'Families: please scan in one at a time');
+    busy = false;
+    if (scannerRunning) html5QrCode.resume();
+  }, delay);
+}
+
+// ── Core check-in logic (shared by camera + manual entry) ──
+let busy = false;
+async function handleCode(rawCode) {
+  if (busy) return;
+  const code = normalizeCode(rawCode);
+  if (!code) return;
+  busy = true;
+  setStatus('', 'Checking…', code);
+
+  try {
+    const famDoc = await db.collection('lts_families').doc(code).get();
+    if (!famDoc.exists) {
+      setStatus('err', 'Code Not Recognized', 'Please see the front desk for help.');
+      resetStatusSoon(4000);
+      return;
+    }
+    const fam = famDoc.data();
+    if (fam.active === false) {
+      setStatus('err', 'Registration Inactive', 'Please see the front desk.');
+      resetStatusSoon(4000);
+      return;
+    }
+
+    const date = todayStr();
+    // Deterministic doc ID (familyId_date) so the kiosk can look up "did this family
+    // already check in today" with a single-document read, without needing broad
+    // query/list access to everyone's attendance records.
+    const attendanceRef = db.collection('lts_attendance').doc(`${code}_${date}`);
+    const existing = await attendanceRef.get();
+
+    if (existing.exists) {
+      const t = existing.data().checkedInAt;
+      const timeStr = t && t.toDate ? new Intl.DateTimeFormat('en-US', { timeZone:'America/Denver', hour:'numeric', minute:'2-digit' }).format(t.toDate()) : '';
+      setStatus('ok', 'Already Checked In', `${fam.familyName || 'Your family'} checked in today${timeStr ? ' at ' + timeStr : ''}.`);
+      resetStatusSoon(4000);
+      return;
+    }
+
+    await attendanceRef.set({
+      familyId: code,
+      familyName: fam.familyName || '',
+      students: fam.students || [],
+      date,
+      checkedInAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    const names = (fam.students || []).map(s => s.name).filter(Boolean).join(', ');
+    setStatus('ok', `Welcome, ${fam.familyName || 'Skater'}!`, names ? `Checked in: ${names}` : 'You are checked in.');
+    resetStatusSoon(4000);
+  } catch (e) {
+    console.error(e);
+    setStatus('err', 'Something Went Wrong', 'Please try again or see the front desk.');
+    resetStatusSoon(4000);
+  }
+}
+
+function submitManualCode() {
+  const input = document.getElementById('manual-code');
+  handleCode(input.value);
+  input.value = '';
+}
+document.getElementById('manual-code').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitManualCode();
+});
+
+// ── Camera scanner ──
+let html5QrCode, scannerRunning = false;
+async function startScanner(cameraId) {
+  if (!html5QrCode) html5QrCode = new Html5Qrcode('reader');
+  const config = { fps: 10, qrbox: { width: 240, height: 240 } };
+  try {
+    await html5QrCode.start(
+      cameraId || { facingMode: 'environment' },
+      config,
+      decodedText => {
+        if (busy) return;
+        html5QrCode.pause();
+        handleCode(decodedText);
+      },
+      () => {} // ignore per-frame scan failures
+    );
+    scannerRunning = true;
+  } catch (e) {
+    console.warn('Camera start failed:', e);
+    document.getElementById('scan-hint').textContent = 'Camera unavailable — use manual code entry below';
+  }
+}
+
+async function switchCamera(id) {
+  if (scannerRunning) { await html5QrCode.stop(); scannerRunning = false; }
+  startScanner(id);
+}
+
+async function initCameras() {
+  try {
+    const cameras = await Html5Qrcode.getCameras();
+    if (cameras && cameras.length > 1) {
+      const sel = document.getElementById('cam-list');
+      sel.innerHTML = cameras.map(c => `<option value="${c.id}">${c.label || 'Camera'}</option>`).join('');
+      document.getElementById('cam-select').style.display = 'flex';
+      const back = cameras.find(c => /back|environment/i.test(c.label));
+      startScanner((back || cameras[0]).id);
+    } else {
+      startScanner();
+    }
+  } catch (e) {
+    startScanner();
+  }
+}
+// Resume scanner on tap if it stalls
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && html5QrCode && scannerRunning && !busy) {
+    html5QrCode.resume();
+  }
+});
+
+// ── AUTH (staff-only access — families never see this kiosk without a login) ──
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const btn   = document.getElementById('login-btn');
+  const err   = document.getElementById('login-err');
+  err.textContent = '';
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  auth.signInWithEmailAndPassword(email, pass).catch(e => {
+    err.textContent = friendlyAuthError(e.code);
+  }).finally(() => { btn.disabled = false; btn.textContent = 'Sign In'; });
+}
+function doSignOut() {
+  if (scannerRunning) { html5QrCode.stop(); scannerRunning = false; }
+  auth.signOut();
+}
+function friendlyAuthError(code) {
+  const map = {
+    'auth/user-not-found':    'No account found with that email.',
+    'auth/wrong-password':    'Incorrect password. Try again.',
+    'auth/invalid-email':     'Please enter a valid email address.',
+    'auth/too-many-requests': 'Too many attempts. Try again later.',
+    'auth/invalid-credential':'Email or password is incorrect.'
+  };
+  return map[code] || 'Sign-in failed. Please try again.';
+}
+document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+let camerasStarted = false;
+auth.onAuthStateChanged(async user => {
+  if (!user) {
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('kiosk-app').classList.add('hidden');
+    return;
+  }
+  try {
+    const doc = await db.collection('users').doc(user.uid).get();
+    if (!doc.exists || doc.data().role !== 'admin') {
+      document.getElementById('login-err').textContent = 'This account is not authorized for kiosk access.';
+      auth.signOut();
+      return;
+    }
+  } catch (e) {
+    document.getElementById('login-err').textContent = 'Could not verify access. Try again.';
+    auth.signOut();
+    return;
+  }
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('kiosk-app').classList.remove('hidden');
+  if (!camerasStarted) { camerasStarted = true; initCameras(); }
+});
+</script>
+</body>
+</html>

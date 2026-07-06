@@ -1,0 +1,18 @@
+{
+  "name": "Colorado Extreme Learn to Skate Check-In",
+  "short_name": "CE Check-In",
+  "description": "Colorado Extreme Learn to Skate attendance check-in kiosk",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1A2535",
+  "theme_color": "#1A2535",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "colorado-extreme-logo.jpg",
+      "sizes": "any",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
