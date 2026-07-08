@@ -59,7 +59,12 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--
 .skater-card .field{margin-bottom:10px;}
 .skater-card .field:last-child{margin-bottom:0;}
 .skater-row{display:flex;gap:10px;}
-.skater-row .field{flex:1;}
+.skater-row .field{flex:1;min-width:0;}
+@media (max-width: 520px) {
+  .skater-row{flex-direction:column;gap:0;}
+  .skater-row .field{margin-bottom:10px;}
+  .skater-row .field:last-child{margin-bottom:0;}
+}
 .remove-skater{position:absolute;top:10px;right:10px;background:none;border:none;color:var(--t3);font-size:16px;cursor:pointer;line-height:1;}
 .remove-skater:hover{color:var(--err);}
 
@@ -255,6 +260,7 @@ function showSuccess(familyName, code) {
     qrReady = true;
   } catch (e) {
     console.error('QR generation failed:', e);
+    fallback.textContent = 'QR image unavailable — use the code below instead. (' + (e && e.message ? e.message : e) + ')';
     fallback.style.display = 'flex';
   }
   window.scrollTo(0, 0);
