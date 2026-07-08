@@ -101,6 +101,13 @@ tbody tr:last-child td{border-bottom:none;}
 .student-row{margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border);}
 .student-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
 .student-row input{flex:1;}
+.dob-level-row{display:flex;gap:8px;margin-top:6px;}
+.dob-level-row input{min-width:0;}
+.dob-level-row .fm-student-level{max-width:130px;}
+@media (max-width: 520px) {
+  .dob-level-row{flex-direction:column;gap:8px;}
+  .dob-level-row .fm-student-level{max-width:none;}
+}
 .add-student-btn{font-size:12px;color:var(--gold);background:none;border:none;cursor:pointer;font-weight:700;padding:2px 0;}
 .qr-box{text-align:center;}
 .qr-box canvas{border:1px solid var(--border);border-radius:8px;}
@@ -466,9 +473,9 @@ function studentRowHtml(name, dob, level) {
       <input class="fm-student-name" placeholder="Skater name" value="${escapeAttr(name||'')}">
       <button class="mini-btn danger" onclick="this.closest('.student-row').remove()" style="flex-shrink:0;">✕</button>
     </div>
-    <div style="display:flex;gap:8px;margin-top:6px;">
+    <div class="dob-level-row">
       <input class="fm-student-dob" type="date" value="${escapeAttr(dob||'')}">
-      <input class="fm-student-level" placeholder="Level (optional)" value="${escapeAttr(level||'')}" style="max-width:130px;">
+      <input class="fm-student-level" placeholder="Level (optional)" value="${escapeAttr(level||'')}">
     </div>
   </div>`;
 }
@@ -586,6 +593,7 @@ function openQrModal(code) {
     qrReady = true;
   } catch (e) {
     console.error('QR generation failed:', e);
+    fallback.textContent = 'QR image unavailable — use the code below instead. (' + (e && e.message ? e.message : e) + ')';
     fallback.style.display = 'flex';
   }
 }
