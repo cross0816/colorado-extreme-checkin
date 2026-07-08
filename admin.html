@@ -2478,7 +2478,7 @@ tbody tr:last-child td{border-bottom:none;}
     </div>
 
     <table>
-      <thead><tr><th>Time</th><th>Family</th><th>Skaters</th><th></th></tr></thead>
+      <thead><tr><th>Time</th><th>Family</th><th>Skater</th><th></th></tr></thead>
       <tbody id="att-body"><tr><td colspan="4" class="empty-state">Loading…</td></tr></tbody>
     </table>
   </div>
@@ -2659,13 +2659,18 @@ function renderAttendance() {
     body.innerHTML = '<tr><td colspan="4" class="empty-state">No check-ins yet for this date.</td></tr>';
     return;
   }
-  body.innerHTML = currentAttRows.map(r => `
+  body.innerHTML = currentAttRows.map(r => {
+    const names = (r.students || []).map(s => s.name).filter(Boolean);
+    if (!names.length) names.push('—');
+    const n = names.length;
+    return names.map((name, i) => `
     <tr>
-      <td>${fmtTime(r.checkedInAt)}</td>
-      <td>${escapeHtml(r.familyName || '—')}</td>
-      <td>${escapeHtml((r.students || []).map(s => s.name).filter(Boolean).join(', ') || '—')}</td>
-      <td class="actions-cell"><button class="mini-btn danger" onclick="deleteAttendance('${r.id}')">Remove</button></td>
+      ${i === 0 ? `<td rowspan="${n}">${fmtTime(r.checkedInAt)}</td>
+      <td rowspan="${n}">${escapeHtml(r.familyName || '—')}</td>` : ''}
+      <td>${escapeHtml(name)}</td>
+      ${i === 0 ? `<td class="actions-cell" rowspan="${n}"><button class="mini-btn danger" onclick="deleteAttendance('${r.id}')">Remove</button></td>` : ''}
     </tr>`).join('');
+  }).join('');
 }
 async function deleteAttendance(id) {
   if (!confirm('Remove this check-in record?')) return;
@@ -2673,8 +2678,12 @@ async function deleteAttendance(id) {
 }
 function exportCsv() {
   const date = document.getElementById('att-date').value || todayStr();
-  const rows = [['Date','Time','Family','Skaters']];
-  currentAttRows.forEach(r => rows.push([date, fmtTime(r.checkedInAt), r.familyName || '', (r.students||[]).map(s=>s.name).filter(Boolean).join('; ')]));
+  const rows = [['Date','Time','Family','Skater']];
+  currentAttRows.forEach(r => {
+    const names = (r.students||[]).map(s=>s.name).filter(Boolean);
+    if (!names.length) names.push('');
+    names.forEach(name => rows.push([date, fmtTime(r.checkedInAt), r.familyName || '', name]));
+  });
   const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const a = document.createElement('a');
