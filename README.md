@@ -152,14 +152,13 @@ this app's current scope.
 
 ## Deployment
 
-This is its own standalone GitHub Pages site (separate from the CXA Parent
-Portal repo), served from the repo root at `lts.coloradoextreme.org`:
+The app is live at **https://lts.coloradoextreme.org/** (this folder is
+served at that domain's root):
 
-- Kiosk: `https://lts.coloradoextreme.org/`
-- Sign up: `https://lts.coloradoextreme.org/signup.html`
-- Admin: `https://lts.coloradoextreme.org/admin.html`
+- Kiosk (staff check-in): https://lts.coloradoextreme.org/
+- Family self-signup: https://lts.coloradoextreme.org/signup.html
+- Admin console: https://lts.coloradoextreme.org/admin.html
 
-The `CNAME` file in this repo sets the custom domain, and DNS has a `CNAME`
-record for `lts` pointing at `cross0816.github.io`. Camera access requires
-HTTPS, which GitHub Pages provides automatically once the custom domain is
-verified (check "Enforce HTTPS" under repo Settings → Pages).
+All links inside the app are relative, so it also works unchanged if served
+from a subfolder (e.g. a GitHub Pages project path). Camera access requires
+HTTPS, which the hosting provides.
