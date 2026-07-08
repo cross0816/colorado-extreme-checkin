@@ -231,7 +231,8 @@ async function handleCode(rawCode) {
     });
 
     const names = (fam.students || []).map(s => s.name).filter(Boolean).join(', ');
-    setStatus('ok', `Welcome, ${fam.familyName || 'Skater'}!`, names ? `Checked in: ${names}` : 'You are checked in.');
+    const famDisplay = fam.familyName ? (/family\s*$/i.test(fam.familyName) ? fam.familyName : `${fam.familyName} Family`) : 'Skater';
+    setStatus('ok', `Welcome, ${famDisplay}!`, names ? `Checked in: ${names}` : 'You are checked in.');
     resetStatusSoon(4000);
   } catch (e) {
     console.error(e);

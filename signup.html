@@ -2539,7 +2539,8 @@ let qrDataUrl = '';
 function showSuccess(familyName, code) {
   document.getElementById('form-view').classList.add('hidden');
   document.getElementById('success-view').classList.remove('hidden');
-  document.getElementById('success-family-name').textContent = `Welcome, ${familyName}!`;
+  const displayName = /family\s*$/i.test(familyName) ? familyName : `${familyName} Family`;
+  document.getElementById('success-family-name').textContent = `Welcome, ${displayName}!`;
   document.getElementById('qr-code-text').textContent = code;
 
   const img = document.getElementById('qr-img');
