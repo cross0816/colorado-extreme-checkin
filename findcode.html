@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Colorado Extreme — Learn to Skate Sign Up</title>
+<title>Colorado Extreme — Find My Code</title>
 <meta name="theme-color" content="#1A2535">
 <link rel="apple-touch-icon" href="colorado-extreme-logo.jpg">
 
@@ -2402,38 +2402,30 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--
   <div class="hdr">
     <img src="colorado-extreme-logo.jpg" alt="Colorado Extreme">
     <h1>Colorado Extreme</h1>
-    <h2>Learn to Skate Sign Up</h2>
+    <h2>Find My Check-In Code</h2>
   </div>
 
-  <!-- SIGN-UP FORM -->
+  <!-- LOOKUP FORM -->
   <div class="card" id="form-view">
-    <div class="section-label">Family Info</div>
+    <div class="section-label">Look Up Your Code</div>
+    <p style="color:var(--t2);font-size:13px;margin-bottom:16px;">Signed up but lost your QR code? Enter your family name and the phone or email you used when you signed up.</p>
     <div class="field">
       <label>Family Name</label>
-      <input id="su-family-name" placeholder="e.g. The Wolitski Family">
+      <input id="fc-family-name" placeholder="e.g. The Wolitski Family">
     </div>
     <div class="field">
-      <label>Parent / Guardian Name</label>
-      <input id="su-parent-name">
+      <label>Contact (phone or email used at sign-up)</label>
+      <input id="fc-contact">
     </div>
-    <div class="field">
-      <label>Contact (phone or email)</label>
-      <input id="su-contact">
-    </div>
-
-    <div class="section-label">Skaters</div>
-    <div id="su-skaters"></div>
-    <button class="add-skater-btn" onclick="addSkaterRow()">+ Add Another Skater</button>
-
-    <button class="btn" id="su-submit-btn" onclick="submitSignup()">Complete Sign Up</button>
-    <div class="err-text" id="su-err"></div>
+    <button class="btn" id="fc-submit-btn" onclick="findCode()">Find My Code</button>
+    <div class="err-text" id="fc-err"></div>
   </div>
 
   <!-- SUCCESS / QR VIEW -->
   <div class="card success-card hidden" id="success-view">
     <div id="print-area">
-      <h2 id="success-family-name">You're all set!</h2>
-      <p>Show this QR code (or the short code below) at check-in from now on. Take a screenshot or print a copy.</p>
+      <h2 id="success-family-name">Found it!</h2>
+      <p>Here's your check-in code. Show this QR code (or the short code below) at check-in. Take a screenshot or print a copy so it's handy.</p>
       <div class="qr-wrap" id="qr-wrap">
         <img id="qr-img" alt="QR code" style="display:none;">
         <div class="fallback" id="qr-fallback-msg" style="display:none;">QR image unavailable — use the code below instead</div>
@@ -2444,102 +2436,63 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--
       <button class="btn outline" onclick="downloadQr()">Download Image</button>
       <button class="btn outline" onclick="window.print()">Print</button>
     </div>
-    <button class="btn outline" style="width:100%;margin-top:8px;" onclick="resetForm()">Sign Up Another Family</button>
+    <button class="btn outline" style="width:100%;margin-top:8px;" onclick="resetForm()">Look Up Another Family</button>
   </div>
 
-  <div class="ft"><a href="findcode.html">Already signed up? Find my code</a></div>
+  <div class="ft"><a href="signup.html">New family? Sign up here</a></div>
 </div>
 
 <script>
-function skaterRowHtml() {
-  return `<div class="skater-card">
-    <button class="remove-skater" onclick="removeSkaterRow(this)" title="Remove skater">✕</button>
-    <div class="field">
-      <label>Skater Name</label>
-      <input class="su-skater-name" placeholder="Full name">
-    </div>
-    <div class="skater-row">
-      <div class="field">
-        <label>Date of Birth</label>
-        <input class="su-skater-dob" type="date">
-      </div>
-      <div class="field">
-        <label>Level (optional)</label>
-        <input class="su-skater-level" placeholder="e.g. Basic 1">
-      </div>
-    </div>
-  </div>`;
+// Forgiving matching: ignore case/extra spaces, a leading "The", a trailing
+// "Family" on names; compare phone numbers by digits only so formatting
+// differences (dashes, spaces, parentheses) don't block a match. Both the
+// family name AND the contact must match the sign-up record.
+function normName(s) {
+  return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim()
+    .replace(/^the\s+/, '').replace(/\s+family$/, '');
 }
-function addSkaterRow() {
-  document.getElementById('su-skaters').insertAdjacentHTML('beforeend', skaterRowHtml());
-}
-function removeSkaterRow(btn) {
-  const wrap = document.getElementById('su-skaters');
-  if (wrap.children.length > 1) btn.closest('.skater-card').remove();
-}
-addSkaterRow();
-
-const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no 0/O/1/I/L to avoid confusion
-function randomCode(len) {
-  let out = '';
-  const bytes = new Uint8Array(len);
-  crypto.getRandomValues(bytes);
-  for (let i = 0; i < len; i++) out += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
-  return out;
-}
-async function generateUniqueCode() {
-  for (let i = 0; i < 8; i++) {
-    const code = randomCode(6);
-    const doc = await db.collection('lts_families').doc(code).get();
-    if (!doc.exists) return code;
-  }
-  throw new Error('Could not generate a unique code, please try again.');
+function normContact(s) {
+  s = String(s || '').trim().toLowerCase();
+  const digits = s.replace(/\D/g, '');
+  return digits.length >= 7 ? digits : s;
 }
 
-let lastCode = '';
-async function submitSignup() {
-  const err = document.getElementById('su-err');
+async function findCode() {
+  const err = document.getElementById('fc-err');
   err.textContent = '';
+  const name = document.getElementById('fc-family-name').value.trim();
+  const contact = document.getElementById('fc-contact').value.trim();
+  if (!name) { err.textContent = 'Please enter your family name.'; return; }
+  if (!contact) { err.textContent = 'Please enter the phone number or email you signed up with.'; return; }
 
-  const familyName = document.getElementById('su-family-name').value.trim();
-  const parentName = document.getElementById('su-parent-name').value.trim();
-  const contact    = document.getElementById('su-contact').value.trim();
-  const students = Array.from(document.querySelectorAll('#su-skaters .skater-card')).map(row => ({
-    name:  row.querySelector('.su-skater-name').value.trim(),
-    dob:   row.querySelector('.su-skater-dob').value,
-    level: row.querySelector('.su-skater-level').value.trim()
-  })).filter(s => s.name);
-
-  if (!familyName) { err.textContent = 'Please enter a family name.'; return; }
-  if (!parentName) { err.textContent = 'Please enter a parent/guardian name.'; return; }
-  if (!contact)    { err.textContent = 'Please enter a phone number or email.'; return; }
-  if (!students.length) { err.textContent = 'Please add at least one skater.'; return; }
-  if (students.some(s => !s.dob)) { err.textContent = 'Please enter a date of birth for each skater.'; return; }
-
-  const btn = document.getElementById('su-submit-btn');
-  btn.disabled = true; btn.textContent = 'Signing up…';
+  const btn = document.getElementById('fc-submit-btn');
+  btn.disabled = true; btn.textContent = 'Searching…';
   try {
-    const code = await generateUniqueCode();
-    await db.collection('lts_families').doc(code).set({
-      familyName, parentName, contact, students,
-      active: true,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    lastCode = code;
-    showSuccess(familyName, code);
+    const snap = await db.collection('lts_families').get();
+    const nName = normName(name), nContact = normContact(contact);
+    const match = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .find(f => normName(f.familyName) === nName && normContact(f.contact) === nContact);
+    if (match) {
+      showSuccess(match.familyName, match.id);
+    } else {
+      err.textContent = 'No match found. Double-check the spelling and the phone/email you signed up with — or ask at the front desk and they can look it up for you.';
+    }
   } catch (e) {
-    err.textContent = e.message || 'Sign up failed. Please try again or see the front desk.';
+    err.textContent = e.message || 'Something went wrong. Please try again or see the front desk.';
   }
-  btn.disabled = false; btn.textContent = 'Complete Sign Up';
+  btn.disabled = false; btn.textContent = 'Find My Code';
 }
 
 let qrReady = false;
 let qrDataUrl = '';
+let lastCode = '';
 function showSuccess(familyName, code) {
+  lastCode = code;
   document.getElementById('form-view').classList.add('hidden');
   document.getElementById('success-view').classList.remove('hidden');
   const displayName = /family\s*$/i.test(familyName) ? familyName : `${familyName} Family`;
-  document.getElementById('success-family-name').textContent = `Welcome, ${displayName}!`;
+  document.getElementById('success-family-name').textContent = `Welcome back, ${displayName}!`;
   document.getElementById('qr-code-text').textContent = code;
 
   const img = document.getElementById('qr-img');
@@ -2574,12 +2527,9 @@ function downloadQr() {
   a.click();
 }
 function resetForm() {
-  document.getElementById('su-family-name').value = '';
-  document.getElementById('su-parent-name').value = '';
-  document.getElementById('su-contact').value = '';
-  document.getElementById('su-skaters').innerHTML = '';
-  addSkaterRow();
-  document.getElementById('su-err').textContent = '';
+  document.getElementById('fc-family-name').value = '';
+  document.getElementById('fc-contact').value = '';
+  document.getElementById('fc-err').textContent = '';
   document.getElementById('success-view').classList.add('hidden');
   document.getElementById('form-view').classList.remove('hidden');
   window.scrollTo(0, 0);

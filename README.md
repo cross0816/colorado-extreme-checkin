@@ -22,6 +22,11 @@ used for the parent portal (`users/{uid}.role == 'admin'`).
   gets their unique code + QR code — this is how a new family gets a code to
   use at the kiosk, without ever needing to log in or touch the kiosk's admin
   login.
+- `findcode.html` — public "find my code" recovery page. A family that signed
+  up but lost their QR code enters their family name plus the phone/email they
+  signed up with; if both match the roster record, their QR card reappears
+  with the same download/print options. Both fields must match, so codes
+  can't be fished for by guessing one or the other.
 - `admin.html` — staff-only console: manage the family/skater roster, generate
   & print QR codes, and view a live attendance log with CSV export. Requires
   the same admin login as the parent portal.
