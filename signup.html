@@ -2548,10 +2548,13 @@ function showSuccess(familyName, code) {
   fallback.style.display = 'none';
   try {
     if (typeof qrcode === 'undefined') throw new Error('QR library failed to load');
-    const qr = qrcode(0, 'M');
+    // Highest error correction + a wide white margin: phone galleries (e.g.
+    // iOS Files) overlay a scan button on the image corner, which must not
+    // make the code unscannable when the saved image is shown at the kiosk.
+    const qr = qrcode(0, 'H');
     qr.addData(code);
     qr.make();
-    qrDataUrl = qr.createDataURL(8, 8);
+    qrDataUrl = qr.createDataURL(10, 60);
     img.src = qrDataUrl;
     img.style.display = 'block';
     qrReady = true;
